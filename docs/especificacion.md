@@ -1,4 +1,4 @@
-# Especificación — app nativa de Mac para EDA (nombre de trabajo: `csv-eda-mac`)
+# Especificación — Trimean
 
 Fecha: 2026-11-13 · Estado: borrador para revisión
 
@@ -145,7 +145,7 @@ Este es el riesgo principal del proyecto. DuckDB, pandas y polars se comportan d
 
 ## 8. Documento de proyecto
 
-- Es un paquete con extensión propia (por definir junto con el nombre), con un `project.json` dentro: versión del formato, referencia al dataset (bookmark + ruta legible), lista de pasos y estado de la interfaz (columnas visibles, paneles abiertos).
+- Es un paquete con extensión `.trimean`, con un `project.json` dentro: versión del formato, referencia al dataset (bookmark + ruta legible), lista de pasos y estado de la interfaz (columnas visibles, paneles abiertos).
 - Si el dataset se movió o cambió, la app lo avisa y permite volver a vincularlo.
 - Nunca guarda una copia de los datos.
 
@@ -166,10 +166,11 @@ Este es el riesgo principal del proyecto. DuckDB, pandas y polars se comportan d
 | Distribución | Open source en GitHub, MIT | Usuario / propuesta |
 | macOS mínimo | 26 | Propuesta aceptada |
 | Modularidad | Una operación = un archivo + registro | Usuario |
+| Nombre | Trimean (la trimedia de Tukey); documento `.trimean` | Usuario, a partir de propuestas investigadas |
 
 ## 10. Pendiente
 
-- Nombre final de la app y extensión del documento.
+- Revisar marcas registradas (USPTO, IMPI) antes de publicar en la App Store.
 - Ícono e identidad visual.
 - Diseño detallado de cada vista (se hará con mockups antes de implementar la UI).
 - Versiones exactas de pandas y polars con las que se garantiza la paridad.

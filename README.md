@@ -1,4 +1,4 @@
-# csv-eda-mac (nombre de trabajo)
+# Trimean
 
 App nativa de Mac para el primer vistazo a un dataset (EDA): abre CSV y Parquet de cualquier tamaño, muestra tipos, faltantes y distribuciones por columna, aplica operaciones de limpieza sencillas como una lista de pasos editable y genera el código equivalente en **pandas** y **polars**.
 

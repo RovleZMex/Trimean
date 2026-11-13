@@ -1,0 +1,14 @@
+.DS_Store
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+# SwiftPM
+.build/
+.swiftpm/
+Package.resolved.lock
+# Python (pruebas de paridad)
+__pycache__/
+.venv/
+*.pyc

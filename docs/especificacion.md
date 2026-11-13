@@ -87,6 +87,10 @@ El primer vistazo a un dataset casi siempre es igual: abrir el archivo, revisar 
 ### Plataforma
 - **SwiftUI**, macOS 26 como mínimo y Swift 6 con concurrencia estricta.
 - **DuckDB** como motor, usando el paquete oficial de Swift (`duckdb/duckdb-swift`). Lee CSV y Parquet, ejecuta consultas fuera de memoria y exporta.
+  - **Versión fijada:** commit `2bc1adcf863f83994c27a909d475f8185fbabfa3` (DuckDB `v1.6.0-dev11145`, julio 2026). Es un snapshot de desarrollo porque la rama `main` de `duckdb-swift` no compila (sep 2026) y la última etiqueta estable es la 1.1.3, de 2024. Como el motor es el único módulo que conoce DuckDB, cambiar de versión después solo toca ese módulo.
+  - **Importación al abrir:** el archivo se importa una vez a una base DuckDB temporal en disco, con un índice de fila `__trimean_row` asignado al leer. Leer el CSV directamente en cada consulta tarda 5.8 s por página a mitad de un archivo de 2.4 GB; ya importado, tarda 2 ms (medido el 2026-11-13, 30 M filas). Importar ese archivo tarda unos 16 s y la base ocupa cerca del 35 % del CSV.
+  - La base temporal vive en el directorio temporal de la app, se borra al cerrar la ventana y al iniciar la app se limpian restos. Nunca va dentro del documento `.trimean`.
+  - Cada dataset abierto usa dos conexiones: una para la tabla y otra para estadísticas, así un cálculo largo no congela el scroll. El wrapper de Swift no permite interrumpir una consulta en curso, así que una estadística que ya no se necesita termina y se descarta.
 - **App basada en documentos** (`DocumentGroup`). Así el proyecto se abre con doble clic y tiene autoguardado y versiones del sistema.
 - **App Sandbox** activado, con acceso a archivos elegidos por el usuario y security-scoped bookmarks hacia el dataset. Esto deja abierta la opción de publicar en la App Store.
 - **Licencia MIT.**
@@ -141,13 +145,19 @@ Este es el riesgo principal del proyecto. DuckDB, pandas y polars se comportan d
 - **Nulos:** se definen por operación (p. ej. en duplicados, dos nulos cuentan como iguales, como en pandas). Cada caso queda documentado en el archivo de la operación.
 - **Mediana:** mediana interpolada (`quantile_cont` ↔ `median()`).
 - **Moda con empate:** se toma el valor menor, de forma determinista, en los tres motores.
-- **Pruebas de paridad:** un arnés corre cada operación sobre fixtures pequeños con casos difíciles (nulos, empates, tipos mezclados, filas duplicadas). Ejecuta el SQL en DuckDB y el snippet generado en pandas y en polars (Python en CI) y compara los resultados. Una operación sin pruebas de paridad no se acepta.
+- **Cambiar tipo:** las conversiones nativas no coinciden entre motores. Con `'1.5'` a entero, DuckDB redondea a 2, polars da nulo y pandas falla. DuckDB acepta `'yes'` y `'T'` como booleano, pandas falla y polars no tiene esa conversión. Por eso Trimean define sus propias reglas y las escribe igual en los tres motores, sin usar el cast nativo:
+  - **Entero:** solo texto que cumple `^[+-]?[0-9]+$`, o decimales sin parte fraccionaria. El resto queda nulo y se cuenta como no convertible.
+  - **Booleano:** solo `true` y `false`, sin distinguir mayúsculas.
+  - **Fecha:** con un formato explícito (por defecto `%Y-%m-%d`).
+- **Fechas al leer:** el sniffer de DuckDB puede detectar formatos como `%d/%m/%Y`. La app guarda el formato detectado y el snippet lo usa (`pd.to_datetime(..., format=…)`, `str.to_date(…)`). Ni `dtype=` ni `schema=` bastan.
+- **Decimal a texto:** DuckDB, pandas y polars dan el mismo texto para dobles (verificado: `0.30000000000000004`, `1e+20`).
+- **Pruebas de paridad:** un arnés corre cada operación sobre fixtures pequeños con casos difíciles (nulos, empates, tipos mezclados, filas duplicadas). El lado DuckDB corre **dentro del motor de Swift de la app**, no con el paquete `duckdb` de Python, porque sus versiones no coinciden (PyPI va en 2.0.0). El motor exporta su resultado a Parquet, Python ejecuta los snippets de pandas y polars y compara. Una operación sin pruebas de paridad no se acepta.
 
 ## 8. Documento de proyecto
 
 - Es un paquete con extensión `.trimean`, con un `project.json` dentro: versión del formato, referencia al dataset (bookmark + ruta legible), lista de pasos y estado de la interfaz (columnas visibles, paneles abiertos).
 - Si el dataset se movió o cambió, la app lo avisa y permite volver a vincularlo.
-- Nunca guarda una copia de los datos.
+- Nunca guarda una copia de los datos dentro del documento. La única copia es la base temporal de §6, que se borra al cerrar.
 
 ## 9. Decisiones tomadas en la conversación
 
@@ -173,4 +183,4 @@ Este es el riesgo principal del proyecto. DuckDB, pandas y polars se comportan d
 - Revisar marcas registradas (USPTO, IMPI) antes de publicar en la App Store.
 - Ícono e identidad visual.
 - Diseño detallado de cada vista (se hará con mockups antes de implementar la UI).
-- Versiones exactas de pandas y polars con las que se garantiza la paridad.
+- Versiones de pandas y polars con las que se garantiza la paridad: propuesta pandas 3.1 y polars 2.1 (las actuales a nov 2026).
